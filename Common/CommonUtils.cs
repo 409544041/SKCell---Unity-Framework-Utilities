@@ -8,6 +8,10 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace SKCell
 {
     /// <summary>
@@ -15,13 +19,33 @@ namespace SKCell
     /// </summary>
     public static class CommonUtils
     {
-        #region Declarations
+        #region Fields & Attributes
         private const int DEACTIVATE_DISTANCE = 100000;    //Deactivate a go by teleporting to this position 
         private static Dictionary<int, Vector3> oriPosDict = new Dictionary<int, Vector3>();    //Keep the original position of the teleported go's
         private static int[] lastFrameCounts = new int[3];
 
         private static Dictionary<string, IEnumerator> crDict = new Dictionary<string, IEnumerator>();
         private static Dictionary<string, Coroutine> procedureDict = new Dictionary<string, Coroutine>();
+
+        private static List<GameObject> worldTexts = new List<GameObject>();
+        private static Dictionary<string, GameObject> customMeshes = new Dictionary<string, GameObject>();
+        private static string activeCustomMesh = string.Empty;
+
+        public static bool NetworkAvailable
+        {
+            get
+            {
+                return Application.internetReachability != NetworkReachability.NotReachable;
+            }
+        }
+
+        public static bool IsWifi
+        {
+            get
+            {
+                return Application.internetReachability == NetworkReachability.ReachableViaLocalAreaNetwork;
+            }
+        }
         #endregion
 
         #region Log & Debug Utils
@@ -88,7 +112,7 @@ namespace SKCell
         public static void DebugDrawText(string text, Vector3 position, Color color, float size, float duration)
         {
             text = text.ToUpper();
-            float kerningSize = size * 0.6f;
+            float kerningSize = size * 0.5f;
             Vector3 basePosition = position;
             for (int i = 0; i < text.Length; i++)
             {
@@ -201,10 +225,10 @@ namespace SKCell
                0.536f,0.891f, 0.509f,0.891f, 0.42f,0.809f, 0.378f,0.523f, 0.372f,0.215f, 0.448f,0.087f, 0.539f,0.069f, 0.609f,0.099f, 0.637f,0.242f, 0.646f,0.416f, 0.646f,0.608f, 0.631f,0.809f, 0.554f,0.888f, 0.527f,0.894f,  }); break;
                 case '1':
                     DebugDrawLines(position, color, size, duration, new[] {
-               0.652f,0.108f, 0.341f,0.114f, 0.497f,0.12f, 0.497f,0.855f, 0.378f,0.623f,  }); break;
+               0.652f,0.108f, 0.341f,0.114f, 0.497f,0.12f, 0.497f,0.855f, 0.328f,0.623f,  }); break;
                 case '2':
                     DebugDrawLines(position, color, size, duration, new[] {
-               0.311f,0.714f, 0.375f,0.83f, 0.564f,0.894f, 0.722f,0.839f, 0.765f,0.681f, 0.634f,0.483f, 0.5f,0.331f, 0.366f,0.245f, 0.299f,0.126f, 0.426f,0.126f, 0.621f,0.136f, 0.679f,0.136f, 0.737f,0.139f,  }); break;
+               0.311f,0.714f, 0.375f,0.83f, 0.564f,0.894f, 0.722f,0.839f, 0.765f,0.681f, 0.634f,0.483f, 0.5f,0.331f, 0.366f,0.245f, 0.299f,0.126f, 0.426f,0.126f, 0.621f,0.136f, 0.679f,0.136f, 0.837f,0.139f,  }); break;
                 case '3':
                     DebugDrawLines(position, color, size, duration, new[] {
                0.289f,0.855f, 0.454f,0.876f, 0.606f,0.818f, 0.685f,0.702f, 0.664f,0.547f, 0.564f,0.459f, 0.484f,0.449f, 0.417f,0.455f, 0.53f,0.434f, 0.655f,0.355f, 0.664f,0.233f, 0.591f,0.105f, 0.466f,0.075f, 0.335f,0.084f, 0.259f,0.142f,  }); break;
@@ -289,6 +313,13 @@ namespace SKCell
         public static void ReleaseObject(GameObject go)
         {
             SKPoolManager.ReleaseObject(go);
+        }
+        public static void Destroy(GameObject go)
+        {
+            if (Application.isPlaying)
+                GameObject.Destroy(go);
+            else
+                GameObject.DestroyImmediate(go);
         }
         public static void SetActiveEfficiently(GameObject go, bool enabled)
         {
@@ -415,6 +446,233 @@ namespace SKCell
         }
         #endregion
 
+        #region GraphicUtils
+
+        public static void GLDrawLine(Vector3 v1, Vector3 v2, int drawMode = GL.LINES)
+        {
+            GL.Begin(drawMode);
+            GL.Vertex(v1);
+            GL.Vertex(v2);
+            GL.End();
+        }
+        public static void GLDrawTriangle(Vector3 v1, Vector3 v2, Vector3 v3, int drawMode = GL.TRIANGLES)
+        {
+            GL.Begin(drawMode);
+            GL.Vertex(v1);
+            GL.Vertex(v2);
+            GL.Vertex(v3);
+            GL.End();
+        }
+        public static void GLDrawQuads(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, int drawMode = GL.QUADS)
+        {
+            GL.Begin(drawMode);
+            GL.Vertex(v1);
+            GL.Vertex(v2);
+            GL.Vertex(v3);
+            GL.Vertex(v4);
+            GL.End();
+        }
+
+        /// <summary>
+        /// Generate a triangle mesh. Vertices are in clockwise order.
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <param name="v3"></param>
+        /// <returns></returns>
+        public static Mesh TriangleMesh(Vector3 v1, Vector3 v2, Vector3 v3)
+        {
+            Mesh m = new Mesh();
+            m.vertices = new Vector3[] { v1, v2, v3 };
+            m.triangles = new int[] { 0, 1, 2 };
+            return m;
+        }
+
+        public static Mesh QuadMesh(Vector3 v1, Vector3 v2)
+        {
+            float yDiff = Mathf.Abs(v2.y - v1.y);
+            float xDiff = Mathf.Abs(v2.x - v1.x);
+            Vector3 bottomLeft = Vector3.zero;
+            if (v1.x < v2.x)
+            {
+                if (v1.y < v2.y)
+                {
+                    bottomLeft = v1;
+                }
+                else
+                {
+                    bottomLeft = v1 - new Vector3(yDiff, 0, 0);
+                }
+            }
+            else
+            {
+                if (v1.y > v2.y)
+                {
+                    bottomLeft = v2;
+                }
+                else
+                {
+                    bottomLeft = v2 - new Vector3(yDiff, 0, 0);
+                }
+            }
+
+            Mesh m = new Mesh();
+            m.vertices = new Vector3[] { bottomLeft, bottomLeft + new Vector3(0, yDiff, 0),
+                bottomLeft + new Vector3(xDiff, yDiff, 0),
+                bottomLeft,
+                bottomLeft + new Vector3(xDiff, yDiff, 0),
+                bottomLeft + new Vector3(xDiff, 0, 0) };
+            m.triangles = new int[] { 0, 1, 2, 3, 4, 5 };
+
+            return m;
+        }
+
+        public static void NewCustomMesh(string id = null)
+        {
+            GameObject go = new GameObject("CustomMesh - " + id);
+            MeshFilter mf = go.AddComponent<MeshFilter>();
+            mf.mesh = new Mesh();
+            go.AddComponent<MeshRenderer>();
+            go.hideFlags = HideFlags.DontSaveInEditor;
+            InsertOrUpdateKeyValueInDictionary(customMeshes, id == null ? go.GetHashCode().ToString() : id, go);
+
+            activeCustomMesh = id == null ? go.GetHashCode().ToString() : id;
+        }
+
+        public static void SetActiveCustomMesh(string id)
+        {
+            if (customMeshes.ContainsKey(id))
+                activeCustomMesh = id;
+        }
+
+        public static GameObject GetCustomMesh(string id)
+        {
+            if (customMeshes.ContainsKey(id))
+                return customMeshes[id];
+            return null;
+        }
+        public static MeshFilter DrawQuad(Vector3 v1, Vector3 v2, Color color)
+        {
+            if (activeCustomMesh == string.Empty)
+            {
+                NewCustomMesh();
+            }
+            Mesh m = QuadMesh(v1, v2);
+            GameObject go = customMeshes[activeCustomMesh];
+            MeshFilter mf = go.GetComponent<MeshFilter>();
+
+            GameObject go2 = new GameObject();
+            MeshFilter mf2 = go2.AddComponent<MeshFilter>();
+            MeshRenderer mr = go.GetComponent<MeshRenderer>();
+            mf2.sharedMesh = m;
+            mr.sharedMaterial = SKAssetLibrary.GridCellMat;
+            mr.sharedMaterial.color = color;
+            CombineMeshes(go, go2);
+            Destroy(go2);
+            return mf;
+        }
+
+        public static void ClearAllCustomMeshes()
+        {
+            foreach (var key in customMeshes.Keys)
+            {
+                Destroy(customMeshes[key]);
+            }
+            customMeshes.Clear();
+        }
+
+        public static void CombineMeshes(GameObject ori, GameObject tar)
+        {
+            MeshFilter[] meshFilters1 = ori.GetComponents<MeshFilter>();
+            MeshFilter[] meshFilters2 = tar.GetComponents<MeshFilter>();
+
+            MeshFilter[] meshFilters = new MeshFilter[meshFilters1.Length + meshFilters2.Length];
+            meshFilters1.CopyTo(meshFilters, 0);
+            meshFilters2.CopyTo(meshFilters, meshFilters1.Length);
+
+            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                combine[i].mesh = meshFilters[i].sharedMesh;
+                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+            }
+            ori.transform.GetComponent<MeshFilter>().mesh = new Mesh();
+            ori.transform.GetComponent<MeshFilter>().mesh.CombineMeshes(combine);
+        }
+        #endregion
+
+        #region AudioUtils
+        /// <summary>
+        /// Plays a non-identifiable sound.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="action"></param>
+        /// <param name="loop"></param>
+        /// <param name="volume"></param>
+        /// <returns></returns>
+        public static AudioSource PlaySound(string fileName, Action onFinish = null, bool loop = false, float volume = 1f)
+        {
+            return SKAudioManager.instance.PlaySound(fileName, onFinish, loop, volume);
+        }
+
+        /// <summary>
+        /// Plays an identifiable sound given by id.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="id"></param>
+        /// <param name="loop"></param>
+        /// <param name="volume"></param>
+        /// <returns></returns>
+        public static AudioSource PlayIdentifiableSound(string fileName, string id, bool loop = false, float volume = 1)
+        {
+            return SKAudioManager.instance.PlayIdentifiableSound(fileName, id, loop, volume);
+        }
+
+        /// <summary>
+        /// Stops an identifiable sound with a fade-out time of fadeTime seconds.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="fadeTime"></param>
+        public static void StopIdentifiableSound(string id, float fadeTime = 0.5f)
+        {
+            SKAudioManager.instance.StopIdentifiableSound(id, fadeTime);
+        }
+
+        public static AudioSource Play3dSound(string fileName, Vector3 position, bool loop = false, float volume = 1f)
+        {
+            return SKAudioManager.instance.Play3dSound(fileName, position, loop, volume);
+        }
+
+        /// <summary>
+        /// Plays a music. (Separate from sounds)
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="loop"></param>
+        /// <param name="volume"></param>
+        /// <returns></returns>
+        public static AudioSource PlayMusic(string filename, bool loop = true, float volume = 1f)
+        {
+            return SKAudioManager.instance.PlayMusic(filename, loop, 2, volume);
+        }
+
+        /// <summary>
+        /// Stops the current music.
+        /// </summary>
+        public static void StopMusic()
+        {
+            SKAudioManager.instance.StopMusic();
+        }
+
+        public static void SetSoundVolume(float volume)
+        {
+            SKAudioManager.instance.ChangeSoundVolume(volume);
+        }
+        public static void SetMusicVolume(float volume)
+        {
+            SKAudioManager.instance.ChangeMusicVolume(volume);
+        }
+        #endregion
+
         #region DateTimeUtils
         public static string GetDayofWeekName(TimeNameDisplayMethod m, DateTime d)
         {
@@ -477,30 +735,47 @@ namespace SKCell
         /// <param name="callback"></param>
         /// <param name="repeatCount"></param>
         /// <param name="repeatInterval"></param>
-        public static void InvokeAction(float seconds, Action callback, int repeatCount = 0, float repeatInterval = 1)
+        public static void InvokeAction(float seconds, Action callback, int repeatCount = 0, float repeatInterval = 1, string id = "")
         {
             if (callback == null)
             {
                 EditorLogError("InvokeAction: <Action callback> is null.");
                 return;
             }
-            SKCommonTimer.instance.InvokeAction(seconds, callback, repeatCount, repeatInterval);
+
+            SKCommonTimer.instance.InvokeAction(seconds, callback, repeatCount, repeatInterval, id);
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Invoke an action after time seconds in editor mode.
+        /// </summary>
+        /// <param name="seconds"></param>
+        /// <param name="callback"></param>
+        public static void InvokeActionEditor(float seconds, Action callback)
+        {
+            SKEditorCoroutineManager.StartEditorCoroutine(EditorActionCoroutine(seconds, callback));
+        }
+        private static IEnumerator EditorActionCoroutine(float seconds, Action callback)
+        {
+            yield return new WaitForSeconds(seconds);
+            callback.Invoke();
+        }
+#endif
         /// <summary>
         /// Invokes an action after time seconds, then repeatedly every repeatInterval seconds.
         /// </summary>
         /// <param name="seconds"></param>
         /// <param name="callback"></param>
         /// <param name="repeatInterval"></param>
-        public static void InvokeActionUnlimited(float seconds, Action callback, float repeatInterval = 1)
+        public static void InvokeActionUnlimited(float seconds, Action callback, float repeatInterval = 1, string id = "")
         {
             if (callback == null)
             {
                 EditorLogError("InvokeAction: <Action callback> is null.");
                 return;
             }
-            SKCommonTimer.instance.InvokeActionUnlimited(seconds, callback, repeatInterval);
+            SKCommonTimer.instance.InvokeActionUnlimited(seconds, callback, repeatInterval, id);
         }
 
         /// <summary>
@@ -540,7 +815,7 @@ namespace SKCell
         /// <param name="action">Action called per frame.</param>
         /// <param name="onFinish">Action called at the end of the procedure.</param>
         /// <param name="id"></param>
-        public static void StartProcedure(SKCurve curve, float variable,  float time, Action<float> action, Action<float> onFinish = null, string id = "")
+        public static void StartProcedure(SKCurve curve, float variable, float time, Action<float> action, Action<float> onFinish = null, string id = "")
         {
             Coroutine cr = StartCoroutine(ProcedureCR(curve, variable, 0, 1, time, action, onFinish), true);
             if (id.Length > 0)
@@ -618,14 +893,14 @@ namespace SKCell
             variable = startValue;
             float step = timeParam / Time.fixedDeltaTime;
             float diff = endValue - startValue;
-                for (int i = 0; i <= step; i++)
-                {
-                    variable = startValue+(SKCurveSampler.SampleCurve(curve, i/step))*diff;
-                    if (action != null)
-                        action.Invoke(variable);
+            for (int i = 0; i <= step; i++)
+            {
+                variable = startValue + (SKCurveSampler.SampleCurve(curve, i / step)) * diff;
+                if (action != null)
+                    action.Invoke(variable);
 
-                    yield return new WaitForFixedUpdate();
-                }
+                yield return new WaitForFixedUpdate();
+            }
             variable = endValue;
             if (action != null)
                 action.Invoke(variable);
@@ -664,7 +939,76 @@ namespace SKCell
         }
         #endregion
 
+        #region EditorUtils
+#if UNITY_EDITOR
+        public static void RefreshSelection(GameObject toSelect)
+        {
+            GameObject go = new GameObject();
+            Selection.activeGameObject = go;
+            Destroy(go);
+            Selection.activeGameObject = toSelect;
+        }
+
+#endif
+        #endregion
+
         #region BaseUtils
+
+        public static T[] Serialize2DArray<T>(T[,] arr)
+        {
+           
+            int length1 = arr.GetLength(0);
+            int length2 = arr.GetLength(1);
+            T[] res = new T[length1 * length2];
+            for (int i = 0; i < length1; i++)
+            {
+                for (int j = 0; j < length2; j++)
+                {
+                    res[i * length1 + j] = arr[i, j];
+                }
+            }
+            return res;
+        }
+        public static T[,] Deserialize2DArray<T>(T[] arr, int len1, int len2)
+        {
+            int length = arr.Length;
+
+            T[,] res = new T[len1, len2];
+            for (int i = 0; i < length; i++)
+            {
+                res[i / len1, i % len2] = arr[i];
+            }
+            return res;
+        }
+
+        public static T[] ModifyArray<T>(T[] arr, int length)
+        {
+            T[] res = new T[length];
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (i >= length)
+                    break;
+                res[i] = arr[i];
+            }
+            return res;
+        }
+
+        public static T[,] Modify2DArray<T>(T[,] arr, int width, int height)
+        {
+            T[,] res = new T[width, height];
+            for (int i = 0; i < arr.GetLength(0); i++)
+            {
+                if (i >= width)
+                    break;
+                for (int j = 0; j < arr.GetLength(1); j++)
+                {
+                    if (j >= height)
+                        break;
+                    res[i, j] = arr[i, j];
+                }
+            }
+            return res;
+        }
         public static Vector3 Vector2Angle(int angle)
         {
             // angle = 0 -> 360
@@ -904,6 +1248,7 @@ namespace SKCell
         }
         public static bool IntToBool(int i)
         {
+            i = (int)Mathf.Clamp01(i);
             return i == 1 ? true : false;
         }
         public static string CompressString(string str)
@@ -1086,6 +1431,73 @@ namespace SKCell
             return File.Exists(path);
         }
 
+        #endregion
+
+        #region HashUtils
+        public static int HashCombine<T1, T2>(T1 t1, T2 t2)
+        {
+            int hash = 17;
+            hash = t1 != null ? ((hash * 31) + t1.GetHashCode()) : hash;
+            hash = t2 != null ? ((hash * 31) + t2.GetHashCode()) : hash;
+            return hash;
+        }
+
+        public static int HashCombine<T1, T2, T3>(T1 t1, T2 t2, T3 t3)
+        {
+            int hash = 17;
+            hash = t1 != null ? ((hash * 31) + t1.GetHashCode()) : hash;
+            hash = t2 != null ? ((hash * 31) + t2.GetHashCode()) : hash;
+            hash = t3 != null ? ((hash * 31) + t3.GetHashCode()) : hash;
+            return hash;
+        }
+
+        public static int HashCombine<T1, T2, T3, T4>(T1 t1, T2 t2, T3 t3, T4 t4)
+        {
+            int hash = 17;
+            hash = t1 != null ? ((hash * 31) + t1.GetHashCode()) : hash;
+            hash = t2 != null ? ((hash * 31) + t2.GetHashCode()) : hash;
+            hash = t3 != null ? ((hash * 31) + t3.GetHashCode()) : hash;
+            hash = t4 != null ? ((hash * 31) + t4.GetHashCode()) : hash;
+            return hash;
+        }
+
+        public static int HashCombine(params object[] args)
+        {
+            int hash = 17;
+            foreach (var arg in args)
+            {
+                if (arg == null)
+                {
+                    continue;
+                }
+                hash = (hash * 31) + arg.GetHashCode();
+            }
+            return hash;
+        }
+
+        public static int HashCombine(params int[] args)
+        {
+            int hash = 17;
+            foreach (var arg in args)
+            {
+                hash = (hash * 31) + arg;
+            }
+            return hash;
+        }
+
+        public static int HashCombine(params string[] args)
+        {
+            int hash = 17;
+            foreach (var arg in args)
+            {
+                if (arg == null)
+                {
+                    continue;
+                }
+                hash = (hash * 31) + arg.GetHashCode();
+            }
+            return hash;
+        }
         #endregion
 
         #region MathUtils
@@ -1507,9 +1919,14 @@ namespace SKCell
             }
         }
 
+        public static Color RandomColor()
+        {
+            return new Color(Random(0f, 1f), Random(0f, 1f), Random(0f, 1f), 1);
+        }
         public static Color MixColor(Color c1, Color c2, float mix = 0.5f)
         {
-            return Color.Lerp(c1, c2, mix);
+            Color diff = c2 - c1;
+            return new Color(c1.r + mix * diff.r, c1.g + mix * diff.g, c1.b + mix * diff.b, c1.a + mix * diff.a);
         }
         public static float ColorLuminance(Color c)
         {

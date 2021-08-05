@@ -1,4 +1,9 @@
-﻿using System;
+﻿//------------------------------------------------------------
+// SKCell - Unity Framework & Utilitiies
+// Copyright © 2019-2021 Pincun Liu. All rights reserved.
+//------------------------------------------------------------
+
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -15,11 +20,12 @@ using UnityEditor;
 namespace SKCell
 {
     /// <summary>
-    /// Global Utilities
+    /// Common Utilities Class.
     /// </summary>
     public static class CommonUtils
     {
         #region Fields & Attributes
+        public static Camera mainCam;
         private const int DEACTIVATE_DISTANCE = 100000;    //Deactivate a go by teleporting to this position 
         private static Dictionary<int, Vector3> oriPosDict = new Dictionary<int, Vector3>();    //Keep the original position of the teleported go's
         private static int[] lastFrameCounts = new int[3];
@@ -30,7 +36,6 @@ namespace SKCell
         private static List<GameObject> worldTexts = new List<GameObject>();
         private static Dictionary<string, GameObject> customMeshes = new Dictionary<string, GameObject>();
         private static string activeCustomMesh = string.Empty;
-
         public static bool NetworkAvailable
         {
             get
@@ -49,6 +54,12 @@ namespace SKCell
         #endregion
 
         #region Log & Debug Utils
+
+        /// <summary>
+        /// Log a normal message to the console.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        /// <param name="detailed">Log detailed information?</param>
         public static void EditorLogNormal(object message, bool detailed = false)
         {
             if (detailed)
@@ -57,6 +68,12 @@ namespace SKCell
                 Debug.Log($"<<color=#CD7F32>{message}</color> | Frame: {Time.frameCount}>");
             lastFrameCounts[0] = Time.frameCount;
         }
+
+        /// <summary>
+        /// Log a warning message to the console.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        /// <param name="detailed">Log detailed information?</param>
         public static void EditorLogWarning(object message, bool detailed = false)
         {
             if (detailed)
@@ -65,6 +82,12 @@ namespace SKCell
                 Debug.LogWarning($"<<color=#CD7F32>{message}</color> | Frame: {Time.frameCount}>");
             lastFrameCounts[1] = Time.frameCount;
         }
+
+        /// <summary>
+        /// Log an error message to the console.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        /// <param name="detailed">Log detailed information?</param>
         public static void EditorLogError(object message, bool detailed = false)
         {
             if (detailed)
@@ -74,23 +97,48 @@ namespace SKCell
             lastFrameCounts[2] = Time.frameCount;
         }
 
+        /// <summary>
+        /// Print out each element of the array in the console.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
         public static void PrintArray<T>(T[] array)
         {
             foreach (T unit in array)
                 EditorLogNormal(unit);
         }
+
+        /// <summary>
+        /// Print out each element of the list in the console.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
         public static void PrintList<T>(List<T> list)
         {
             foreach (T unit in list)
                 EditorLogNormal(unit);
         }
 
+        /// <summary>
+        /// Print out each key value pair of the dictionary in the console.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dict"></param>
         public static void PrintDict<TKey, TValue>(Dictionary<TKey, TValue> dict)
         {
             foreach (var key in dict.Keys)
                 EditorLogNormal($"Key: {key} --- Value: {dict[key]}");
         }
 
+        /// <summary>
+        /// Draw a circle using Dubug.DrawLine().
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="radius"></param>
+        /// <param name="color"></param>
+        /// <param name="duration"></param>
+        /// <param name="divisions">The more the divisions, the more accurate the circle.</param>
         public static void DebugDrawCircle(Vector3 center, float radius, Color color, float duration, int divisions)
         {
             for (int i = 0; i <= divisions; i++)
@@ -101,6 +149,13 @@ namespace SKCell
             }
         }
 
+        /// <summary>
+        /// Draw a rectangle using Debug.DrawLine().
+        /// </summary>
+        /// <param name="minXY"></param>
+        /// <param name="maxXY"></param>
+        /// <param name="color"></param>
+        /// <param name="duration"></param>
         public static void DebugDrawRectangle(Vector3 minXY, Vector3 maxXY, Color color, float duration)
         {
             Debug.DrawLine(new Vector3(minXY.x, minXY.y), new Vector3(maxXY.x, minXY.y), color, duration);
@@ -109,6 +164,14 @@ namespace SKCell
             Debug.DrawLine(new Vector3(maxXY.x, minXY.y), new Vector3(maxXY.x, maxXY.y), color, duration);
         }
 
+        /// <summary>
+        /// Draw text using Debug.DrawLine().
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="position"></param>
+        /// <param name="color"></param>
+        /// <param name="size"></param>
+        /// <param name="duration"></param>
         public static void DebugDrawText(string text, Vector3 position, Color color, float size, float duration)
         {
             text = text.ToUpper();
@@ -135,6 +198,14 @@ namespace SKCell
             }
         }
 
+        /// <summary>
+        /// Draw char using Debug.DrawLine().
+        /// </summary>
+        /// <param name="c"></param>
+        /// <param name="position"></param>
+        /// <param name="color"></param>
+        /// <param name="size"></param>
+        /// <param name="duration"></param>
         public static void DebugDrawChar(char c, Vector3 position, Color color, float size, float duration)
         {
             switch (c)
@@ -285,6 +356,14 @@ namespace SKCell
             }
         }
 
+        /// <summary>
+        /// Draw multiple lines using Debug.DrawLine().
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="color"></param>
+        /// <param name="size"></param>
+        /// <param name="duration"></param>
+        /// <param name="points">Vertices of the lines.</param>
         public static void DebugDrawLines(Vector3 position, Color color, float size, float duration, Vector3[] points)
         {
             for (int i = 0; i < points.Length - 1; i++)
@@ -293,6 +372,14 @@ namespace SKCell
             }
         }
 
+        /// <summary>
+        /// Draw multiple lines using Debug.DrawLine().
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="color"></param>
+        /// <param name="size"></param>
+        /// <param name="duration"></param>
+        /// <param name="points">Points are pairs of 2.</param>
         public static void DebugDrawLines(Vector3 position, Color color, float size, float duration, float[] points)
         {
             List<Vector3> vecList = new List<Vector3>();
@@ -306,14 +393,30 @@ namespace SKCell
         #endregion
 
         #region MonoUtils
+
+        /// <summary>
+        /// Spawn object from an object pool.
+        /// </summary>
+        /// <param name="go"></param>
+        /// <returns></returns>
         public static GameObject SpawnObject(GameObject go)
         {
             return SKPoolManager.SpawnObject(go);
         }
+
+        /// <summary>
+        /// Release object into an object pool.
+        /// </summary>
+        /// <param name="go"></param>
         public static void ReleaseObject(GameObject go)
         {
             SKPoolManager.ReleaseObject(go);
         }
+
+        /// <summary>
+        /// Destroy an object. (compatible with both editor and runtime)
+        /// </summary>
+        /// <param name="go"></param>
         public static void Destroy(GameObject go)
         {
             if (Application.isPlaying)
@@ -321,6 +424,12 @@ namespace SKCell
             else
                 GameObject.DestroyImmediate(go);
         }
+
+        /// <summary>
+        /// Set active only if the original status differs from the new status.
+        /// </summary>
+        /// <param name="go"></param>
+        /// <param name="enabled"></param>
         public static void SetActiveEfficiently(GameObject go, bool enabled)
         {
             if (go == null)
@@ -332,8 +441,7 @@ namespace SKCell
                 go.SetActive(enabled);
         }
         /// <summary>
-        /// Deactivate a GameObject by teleporting it to a far position. In some cases doing so will be more efficient 
-        /// for the OnEnable/OnDisable Unity events will not be called.
+        /// Deactivate a GameObject by teleporting it to a far position.
         /// </summary>
         /// <param name="go"></param>
         public static void DeactivateByTeleport(GameObject go)
@@ -368,12 +476,23 @@ namespace SKCell
             RemoveKeyInDictionary(oriPosDict, hash);
         }
 
+        /// <summary>
+        /// Get component only if the component exists.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="go"></param>
+        /// <returns></returns>
         public static T GetComponentNonAlloc<T>(GameObject go) where T : Component
         {
             if (!go.TryGetComponent<T>(out T result))
                 return null;
             return result;
         }
+
+        /// <summary>
+        /// Destroy an object only if it exists.
+        /// </summary>
+        /// <param name="go"></param>
         public static void SafeDestroy(GameObject go)
         {
             if (go == null || !go)
@@ -383,63 +502,135 @@ namespace SKCell
         #endregion
 
         #region InputUtils
+
+        /// <summary>
+        /// Returns the mouse position in world coordinates without depth. (from the main camera)
+        /// </summary>
+        /// <returns></returns>
         public static Vector3 GetMouseWorldPosition()
         {
-            Vector3 vec = GetMouseWorldPositionWithZ(Input.mousePosition, Camera.main);
+            Vector3 vec = GetMouseWorldPositionWithZ(Input.mousePosition, mainCam);
             vec.z = 0f;
             return vec;
         }
 
+        /// <summary>
+        /// Returns the mouse position in world coordinates with depth. (from the main camera)
+        /// </summary>
+        /// <returns></returns>
         public static Vector3 GetMouseWorldPositionWithZ()
         {
-            return GetMouseWorldPositionWithZ(Input.mousePosition, Camera.main);
+            return GetMouseWorldPositionWithZ(Input.mousePosition, mainCam);
         }
 
+        /// <summary>
+        /// Returns the mouse position in world coordinates with depth. (from worldCamera)
+        /// </summary>
+        /// <param name="worldCamera"></param>
+        /// <returns></returns>
         public static Vector3 GetMouseWorldPositionWithZ(Camera worldCamera)
         {
             return GetMouseWorldPositionWithZ(Input.mousePosition, worldCamera);
         }
 
+        /// <summary>
+        /// Returns the screen position in world coordinates with depth. (from worldCamera)
+        /// </summary>
+        /// <param name="screenPosition"></param>
+        /// <param name="worldCamera"></param>
+        /// <returns></returns>
         public static Vector3 GetMouseWorldPositionWithZ(Vector3 screenPosition, Camera worldCamera)
         {
             Vector3 worldPosition = worldCamera.ScreenToWorldPoint(screenPosition);
             return worldPosition;
         }
 
+        /// <summary>
+        /// Get the direction from fromPosition to the mouse world position.
+        /// </summary>
+        /// <param name="fromPosition"></param>
+        /// <returns></returns>
         public static Vector3 GetDirToMouse(Vector3 fromPosition)
         {
             Vector3 mouseWorldPosition = GetMouseWorldPosition();
             return (mouseWorldPosition - fromPosition).normalized;
         }
 
+        /// <summary>
+        /// Add an action triggered by GetMouseButtonDown.
+        /// </summary>
+        /// <param name="mouseID"></param>
+        /// <param name="a"></param>
         public static void AddMouseDownAction(int mouseID, Action a)
         {
             SKInput.instance.RegisterMouseDownAction(mouseID, a);
         }
+
+        /// <summary>
+        /// Remove an action triggered by GetMouseButtonDown.
+        /// </summary>
+        /// <param name="mouseID"></param>
+        /// <param name="a"></param>
         public static void RemoveMouseDownAction(int mouseID, Action a)
         {
             SKInput.instance.RemoveMouseDownAction(mouseID, a);
         }
+
+        /// <summary>
+        /// Add an action triggered by GetMouseButtonUp.
+        /// </summary>
+        /// <param name="mouseID"></param>
+        /// <param name="a"></param>
         public static void AddMouseUpAction(int mouseID, Action a)
         {
             SKInput.instance.RegisterMouseUpAction(mouseID, a);
         }
+
+        /// <summary>
+        /// Remove an action triggered by GetMouseButtonUp.
+        /// </summary>
+        /// <param name="mouseID"></param>
+        /// <param name="a"></param>
         public static void RemoveMouseUpAction(int mouseID, Action a)
         {
             SKInput.instance.RemoveMouseUpAction(mouseID, a);
         }
+
+        /// <summary>
+        /// Add an action triggered by GetKeyDown.
+        /// </summary>
+        /// <param name="mouseID"></param>
+        /// <param name="a"></param>
         public static void AddKeyDownAction(KeyCode kc, Action a)
         {
             SKInput.instance.RegisterKeyDownAction(kc, a);
         }
+
+        /// <summary>
+        /// Remove an action triggered by GetKeyDown.
+        /// </summary>
+        /// <param name="kc"></param>
+        /// <param name="a"></param>
         public static void RemoveKeyDownAction(KeyCode kc, Action a)
         {
             SKInput.instance.RemoveKeyDownAction(kc, a);
         }
+
+        /// <summary>
+        /// Add an action triggered by GetKeyUp.
+        /// </summary>
+        /// <param name="kc"></param>
+        /// <param name="a"></param>
         public static void AddKeyUpAction(KeyCode kc, Action a)
         {
             SKInput.instance.RegisterKeyUpAction(kc, a);
         }
+
+        /// <summary>
+        /// Remove an action triggered by GetKeyUp.
+        /// </summary>
+        /// <param name="kc"></param>
+        /// <param name="a"></param>
         public static void RemoveKeyUpAction(KeyCode kc, Action a)
         {
             SKInput.instance.RemoveKeyUpAction(kc, a);
@@ -448,6 +639,12 @@ namespace SKCell
 
         #region GraphicUtils
 
+        /// <summary>
+        /// Draw a line using low-level graphics library.
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <param name="drawMode"></param>
         public static void GLDrawLine(Vector3 v1, Vector3 v2, int drawMode = GL.LINES)
         {
             GL.Begin(drawMode);
@@ -455,6 +652,14 @@ namespace SKCell
             GL.Vertex(v2);
             GL.End();
         }
+
+        /// <summary>
+        /// Draw a triangle using low-level graphics library.
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <param name="v3"></param>
+        /// <param name="drawMode"></param>
         public static void GLDrawTriangle(Vector3 v1, Vector3 v2, Vector3 v3, int drawMode = GL.TRIANGLES)
         {
             GL.Begin(drawMode);
@@ -463,6 +668,15 @@ namespace SKCell
             GL.Vertex(v3);
             GL.End();
         }
+
+        /// <summary>
+        /// Draw a quad using low-level graphics library.
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <param name="v3"></param>
+        /// <param name="v4"></param>
+        /// <param name="drawMode"></param>
         public static void GLDrawQuads(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, int drawMode = GL.QUADS)
         {
             GL.Begin(drawMode);
@@ -488,6 +702,12 @@ namespace SKCell
             return m;
         }
 
+        /// <summary>
+        /// Generate a quad mesh.
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
         public static Mesh QuadMesh(Vector3 v1, Vector3 v2)
         {
             float yDiff = Mathf.Abs(v2.y - v1.y);
@@ -527,6 +747,10 @@ namespace SKCell
             return m;
         }
 
+        /// <summary>
+        /// Create a new custom mesh.
+        /// </summary>
+        /// <param name="id"></param>
         public static void NewCustomMesh(string id = null)
         {
             GameObject go = new GameObject("CustomMesh - " + id);
@@ -539,18 +763,35 @@ namespace SKCell
             activeCustomMesh = id == null ? go.GetHashCode().ToString() : id;
         }
 
+        /// <summary>
+        /// Set the active custom mesh.
+        /// </summary>
+        /// <param name="id"></param>
         public static void SetActiveCustomMesh(string id)
         {
             if (customMeshes.ContainsKey(id))
                 activeCustomMesh = id;
         }
 
+        /// <summary>
+        /// Get a custom mesh.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public static GameObject GetCustomMesh(string id)
         {
             if (customMeshes.ContainsKey(id))
                 return customMeshes[id];
             return null;
         }
+
+        /// <summary>
+        /// Draw quad into the active custom mesh.
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <param name="color"></param>
+        /// <returns></returns>
         public static MeshFilter DrawQuad(Vector3 v1, Vector3 v2, Color color)
         {
             if (activeCustomMesh == string.Empty)
@@ -572,6 +813,9 @@ namespace SKCell
             return mf;
         }
 
+        /// <summary>
+        /// Destroy all custom meshes.
+        /// </summary>
         public static void ClearAllCustomMeshes()
         {
             foreach (var key in customMeshes.Keys)
@@ -581,6 +825,11 @@ namespace SKCell
             customMeshes.Clear();
         }
 
+        /// <summary>
+        /// Combine two meshes into one.
+        /// </summary>
+        /// <param name="ori"></param>
+        /// <param name="tar"></param>
         public static void CombineMeshes(GameObject ori, GameObject tar)
         {
             MeshFilter[] meshFilters1 = ori.GetComponents<MeshFilter>();
@@ -674,6 +923,13 @@ namespace SKCell
         #endregion
 
         #region DateTimeUtils
+
+        /// <summary>
+        /// Get the day name in week. e.g. 5, Fri, fri, Friday, friday.
+        /// </summary>
+        /// <param name="m"></param>
+        /// <param name="d"></param>
+        /// <returns></returns>
         public static string GetDayofWeekName(TimeNameDisplayMethod m, DateTime d)
         {
             if (d == null)
@@ -696,6 +952,13 @@ namespace SKCell
             }
             return null;
         }
+
+        /// <summary>
+        /// Get the name of month.
+        /// </summary>
+        /// <param name="m"></param>
+        /// <param name="month"></param>
+        /// <returns></returns>
         public static string GetMonthName(TimeNameDisplayMethod m, int month)
         {
             if (month < 1 || month > 12)
@@ -718,6 +981,13 @@ namespace SKCell
             }
             return null;
         }
+
+        /// <summary>
+        /// Get the number of seconds between two datetimes.
+        /// </summary>
+        /// <param name="since"></param>
+        /// <param name="now"></param>
+        /// <returns></returns>
         public static double GetSecondsSince(DateTime since, DateTime now)
         {
             return (now - since).Duration().TotalSeconds;
@@ -908,6 +1178,13 @@ namespace SKCell
                 onFinish.Invoke(variable);
         }
 
+        /// <summary>
+        /// Starts a coroutine.
+        /// </summary>
+        /// <param name="cr"></param>
+        /// <param name="allowMultipleInstances">If not, previous instances of the coroutine will be stopped.</param>
+        /// <returns></returns>
+
         public static Coroutine StartCoroutine(IEnumerator cr, bool allowMultipleInstances = false)
         {
             if (!allowMultipleInstances)
@@ -921,15 +1198,29 @@ namespace SKCell
             return SKCommonTimer.instance.StartCoroutine(cr);
         }
 
+        /// <summary>
+        /// Stops a coroutine.
+        /// </summary>
+        /// <param name="cr"></param>
         public static void StopCoroutine(IEnumerator cr)
         {
             SKCommonTimer.instance.StopCoroutine(cr);
         }
+
+        /// <summary>
+        /// Stops a coroutine.
+        /// </summary>
+        /// <param name="cr"></param>
         public static void StopCoroutine(Coroutine cr)
         {
             SKCommonTimer.instance.StopCoroutine(cr);
         }
 
+        /// <summary>
+        /// Release an object into an object pool after time seconds
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="time"></param>
         public static void ReleaseObject(GameObject obj, float time)
         {
             InvokeAction(time, () =>
@@ -954,6 +1245,12 @@ namespace SKCell
 
         #region BaseUtils
 
+        /// <summary>
+        /// Serialize a 2D array into a 1D array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <returns></returns>
         public static T[] Serialize2DArray<T>(T[,] arr)
         {
            
@@ -969,6 +1266,15 @@ namespace SKCell
             }
             return res;
         }
+
+        /// <summary>
+        /// Deserialize a 1D array into a 2D array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <param name="len1"></param>
+        /// <param name="len2"></param>
+        /// <returns></returns>
         public static T[,] Deserialize2DArray<T>(T[] arr, int len1, int len2)
         {
             int length = arr.Length;
@@ -981,6 +1287,13 @@ namespace SKCell
             return res;
         }
 
+        /// <summary>
+        /// Modify the length of an array. Existing data will be preserved.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public static T[] ModifyArray<T>(T[] arr, int length)
         {
             T[] res = new T[length];
@@ -992,7 +1305,14 @@ namespace SKCell
             }
             return res;
         }
-
+        
+        /// <summary>
+        /// Modify the length of an array. Existing data will be preserved.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public static T[,] Modify2DArray<T>(T[,] arr, int width, int height)
         {
             T[,] res = new T[width, height];
@@ -1009,12 +1329,12 @@ namespace SKCell
             }
             return res;
         }
-        public static Vector3 Vector2Angle(int angle)
-        {
-            // angle = 0 -> 360
-            float angleRad = angle * (Mathf.PI / 180f);
-            return new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
-        }
+
+        /// <summary>
+        /// Convert an angle to a vector2.
+        /// </summary>
+        /// <param name="angle"></param>
+        /// <returns></returns>
 
         public static Vector3 Angle2Vector(float angle)
         {
@@ -1023,6 +1343,11 @@ namespace SKCell
             return new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
         }
 
+        /// <summary>
+        /// Convert an int angle to a vector2.
+        /// </summary>
+        /// <param name="angle"></param>
+        /// <returns></returns>
         public static Vector3 Angle2VectorInt(int angle)
         {
             // angle = 0 -> 360
@@ -1030,6 +1355,11 @@ namespace SKCell
             return new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
         }
 
+        /// <summary>
+        /// Convert a vector2 to an angle (0-360);
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
         public static float Vector2AngleFloat(Vector3 dir)
         {
             dir = dir.normalized;
@@ -1039,6 +1369,11 @@ namespace SKCell
             return n;
         }
 
+        /// <summary>
+        /// Convert a vector2 (x,z) to an angle (0-360);
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
         public static float Vector2AngleFloatXZ(Vector3 dir)
         {
             dir = dir.normalized;
@@ -1048,6 +1383,11 @@ namespace SKCell
             return n;
         }
 
+        /// <summary>
+        /// Convert a vector2 to an angle (0-360);
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
         public static int Vector2Angle(Vector3 dir)
         {
             dir = dir.normalized;
@@ -1058,6 +1398,11 @@ namespace SKCell
             return angle;
         }
 
+        /// <summary>
+        /// Convert a vector2 to an angle (0-180);
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
         public static int Vector2Angle180(Vector3 dir)
         {
             dir = dir.normalized;
@@ -1066,20 +1411,48 @@ namespace SKCell
 
             return angle;
         }
+
+        /// <summary>
+        /// Rotate a vector.
+        /// </summary>
+        /// <param name="vec"></param>
+        /// <param name="vecRotation"></param>
+        /// <returns></returns>
         public static Vector3 ApplyRotationToVector(Vector3 vec, Vector3 vecRotation)
         {
             return ApplyRotationToVector(vec, Vector2AngleFloat(vecRotation));
         }
 
+        /// <summary>
+        /// Rotate a vector.
+        /// </summary>
+        /// <param name="vec"></param>
+        /// <param name="angle"></param>
+        /// <returns></returns>
         public static Vector3 ApplyRotationToVector(Vector3 vec, float angle)
         {
             return Quaternion.Euler(0, 0, angle) * vec;
         }
 
+        /// <summary>
+        /// Rotate a vector(x,z).
+        /// </summary>
+        /// <param name="vec"></param>
+        /// <param name="angle"></param>
+        /// <returns></returns>
         public static Vector3 ApplyRotationToVectorXZ(Vector3 vec, float angle)
         {
             return Quaternion.Euler(0, angle, 0) * vec;
         }
+
+        /// <summary>
+        /// Insert a key value pair into a dictionary. If the key already exists, update the value.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dict"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
         public static void InsertOrUpdateKeyValueInDictionary<TKey, TValue>(Dictionary<TKey, TValue> dict, TKey key, TValue value)
         {
             if (dict == null)
@@ -1092,6 +1465,14 @@ namespace SKCell
             else
                 dict.Add(key, value);
         }
+
+        /// <summary>
+        /// Remove key in dictionary only if the key exists.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dict"></param>
+        /// <param name="key"></param>
         public static void RemoveKeyInDictionary<TKey, TValue>(Dictionary<TKey, TValue> dict, TKey key)
         {
             if (dict == null)
@@ -1104,6 +1485,15 @@ namespace SKCell
             else
                 return;
         }
+
+        /// <summary>
+        /// Get value in dictionary only if the key exists.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dict"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
         public static TValue GetValueInDictionary<TKey, TValue>(Dictionary<TKey, TValue> dict, TKey key)
         {
             if (dict == null)
@@ -1120,6 +1510,13 @@ namespace SKCell
             }
         }
 
+        /// <summary>
+        /// Insert an item into a list.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="item"></param>
+        /// <param name="allowMultiple">If not, multiple items will not be inserted.</param>
         public static void InsertToList<T>(List<T> list, T item, bool allowMultiple)
         {
             if (!allowMultiple)
@@ -1130,6 +1527,12 @@ namespace SKCell
             list.Add(item);
         }
 
+        /// <summary>
+        /// Remove an item from a list only if the item exists.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="item"></param>
         public static void RemoveFromList<T>(List<T> list, T item)
         {
             if (list.Contains(item))
@@ -1138,13 +1541,37 @@ namespace SKCell
             }
         }
 
+        /// <summary>
+        /// Swap two values.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value1"></param>
+        /// <param name="value2"></param>
         public static void SwapValue<T>(ref T value1, ref T value2)
         {
             T temp = value1;
             value1 = value2;
             value2 = temp;
         }
+        /// <summary>
+        /// Swap two values.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value1"></param>
+        /// <param name="value2"></param>
+        public static void SwapValueInArray<T>(IList<T> arr, int index1, int index2)
+        {
+            T temp = arr[index1];
+            arr[index1] = arr[index2];
+            arr[index2] = temp;
+        }
 
+        /// <summary>
+        /// Fill the array with item.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <param name="item"></param>
         public static void FillArray<T>(T[] arr, T item)
         {
             for (int i = 0; i < arr.Length; i++)
@@ -1153,6 +1580,12 @@ namespace SKCell
             }
         }
 
+        /// <summary>
+        /// Fill the list with item.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="item"></param>
         public static void FillList<T>(List<T> list, T item)
         {
             for (int i = 0; i < list.Count; i++)
@@ -1160,6 +1593,14 @@ namespace SKCell
                 list[i] = item;
             }
         }
+
+        /// <summary>
+        /// Get the count of item in array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public static int CountInArray<T>(T[] arr, T item)
         {
             int count = 0;
@@ -1170,6 +1611,14 @@ namespace SKCell
             }
             return count;
         }
+
+        /// <summary>
+        /// Get the count of item in list.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public static int CountInList<T>(List<T> list, T item)
         {
             int count = 0;
@@ -1180,6 +1629,13 @@ namespace SKCell
             }
             return count;
         }
+
+        /// <summary>
+        /// Remove duplicates in array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <returns></returns>
         public static T[] RemoveDuplicatesInArray<T>(T[] arr)
         {
             List<T> list = new List<T>();
@@ -1193,6 +1649,12 @@ namespace SKCell
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Remove duplicates in list.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="arr"></param>
+        /// <returns></returns>
         public static List<T> RemoveDuplicatesInList<T>(List<T> arr)
         {
             List<T> list = new List<T>();
@@ -1205,6 +1667,12 @@ namespace SKCell
             }
             return list;
         }
+
+        /// <summary>
+        /// Get the max int in array.
+        /// </summary>
+        /// <param name="arr"></param>
+        /// <returns></returns>
         public static int MaxInArray(int[] arr)
         {
             int max = int.MinValue;
@@ -1214,6 +1682,12 @@ namespace SKCell
             }
             return max;
         }
+
+        /// <summary>
+        /// Get the max float in array.
+        /// </summary>
+        /// <param name="arr"></param>
+        /// <returns></returns>
         public static float MaxInArray(float[] arr)
         {
             float max = float.MinValue;
@@ -1223,6 +1697,12 @@ namespace SKCell
             }
             return max;
         }
+
+        /// <summary>
+        /// Get the min int in array.
+        /// </summary>
+        /// <param name="arr"></param>
+        /// <returns></returns>
         public static int MinInArray(int[] arr)
         {
             int min = int.MaxValue;
@@ -1232,6 +1712,12 @@ namespace SKCell
             }
             return min;
         }
+
+        /// <summary>
+        /// Get the min float in array.
+        /// </summary>
+        /// <param name="arr"></param>
+        /// <returns></returns>
         public static float MinInArray(float[] arr)
         {
             float min = float.MaxValue;
@@ -1242,15 +1728,32 @@ namespace SKCell
             return min;
         }
 
+        /// <summary>
+        /// return b ? 1 : 0;
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static int BoolToInt(bool b)
         {
             return b ? 1 : 0;
         }
+
+        /// <summary>
+        ///  return i == 1 ? true : false;
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
         public static bool IntToBool(int i)
         {
             i = (int)Mathf.Clamp01(i);
             return i == 1 ? true : false;
         }
+
+        /// <summary>
+        /// Compress a string. (UTF-8 + GZipStream)
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         public static string CompressString(string str)
         {
             var compressBeforeByte = Encoding.GetEncoding("UTF-8").GetBytes(str);
@@ -1259,6 +1762,11 @@ namespace SKCell
             return compressString;
         }
 
+        /// <summary>
+        /// Decompress a compressed string.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         public static string DecompressString(string str)
         {
             var compressBeforeByte = Convert.FromBase64String(str);
@@ -1286,6 +1794,7 @@ namespace SKCell
                 throw new Exception(e.Message);
             }
         }
+
         private static byte[] Decompress(byte[] data)
         {
             try
@@ -1315,6 +1824,285 @@ namespace SKCell
                 throw new Exception(e.Message);
             }
         }
+        #endregion
+
+        #region Sorting Utils
+        /// <summary>
+        /// Perform selection sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void SelectionSort(IList<int> list)
+        {
+            for (int i = 0; i < list.Count - 1; i++)
+            {
+                int min = i;
+                int temp = list[i];
+
+                for (int j = i + 1; j < list.Count; j++)
+                {
+                    if (list[j] < temp)
+                    {
+                        min = j;
+                        temp = list[j];
+                    }
+                }
+                if (min != i)
+                    SwapValueInArray(list, min, i);
+            }
+        }
+        /// <summary>
+        /// Perform selection sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void SelectionSort(IList<float> list)
+        {
+            for (int i = 0; i < list.Count - 1; i++)
+            {
+                int min = i;
+                float temp = list[i];
+
+                for (int j = i + 1; j < list.Count; j++)
+                {
+                    if (list[j] < temp)
+                    {
+                        min = j;
+                        temp = list[j];
+                    }
+                }
+                if (min != i)
+                    SwapValueInArray(list, min, i);
+            }
+        }
+
+        /// <summary>
+        ///  Perform bubble sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void BubbleSort(IList<int> list)
+        {
+            bool flag;
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                flag = true;
+                for (int j = 0; j < i; j++)
+                {
+                    if (list[j] > list[j + 1])
+                    {
+                        SwapValueInArray(list, j, j+1);
+                        flag = false;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+        /// <summary>
+        ///  Perform bubble sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void BubbleSort(IList<float> list)
+        {
+            bool flag;
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                flag = true;
+                for (int j = 0; j < i; j++)
+                {
+                    if (list[j] > list[j + 1])
+                    {
+                        SwapValueInArray(list, j, j + 1);
+                        flag = false;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        /// <summary>
+        /// Perform cocktail sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void CocktailSort(IList<int> list)
+        {
+            bool flag;
+            int m = 0, n = 0;
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                flag = true;
+                if (i % 2 == 0)
+                {
+                    for (int j = n; j < list.Count - 1 - m; j++)
+                    {
+                        if (list[j] > list[j + 1])
+                        {
+                            SwapValueInArray(list, j, j + 1);
+                            flag = false;
+                        }
+                    }
+                    if (flag) break;
+                    m++;
+                }
+                else
+                {
+                    for (int k = list.Count - 1 - m; k > n; k--)
+                    {
+                        if (list[k] < list[k - 1])
+                        {
+                            SwapValueInArray(list, k, k - 1);
+                            flag = false;
+                        }
+                    }
+                    if (flag) break;
+                    n++;
+                }
+            }
+        }
+        /// <summary>
+        /// Perform cocktail sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void CocktailSort(IList<float> list)
+        {
+            bool flag;
+            int m = 0, n = 0;
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                flag = true;
+                if (i % 2 == 0)
+                {
+                    for (int j = n; j < list.Count - 1 - m; j++)
+                    {
+                        if (list[j] > list[j + 1])
+                        {
+                            SwapValueInArray(list, j, j + 1);
+                            flag = false;
+                        }
+                    }
+                    if (flag) break;
+                    m++;
+                }
+                else
+                {
+                    for (int k = list.Count - 1 - m; k > n; k--)
+                    {
+                        if (list[k] < list[k - 1])
+                        {
+                            SwapValueInArray(list, k, k - 1);
+                            flag = false;
+                        }
+                    }
+                    if (flag) break;
+                    n++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Perform insert sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void InsertSort(IList<int> list)
+        {
+            int temp;
+            for (int i = 1; i < list.Count; i++)
+            {
+                temp = list[i];
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (list[j] > temp)
+                    {
+                        list[j + 1] = list[j];
+                        if (j == 0)
+                        {
+                            list[0] = temp;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        list[j + 1] = temp;
+                        break;
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// Perform insert sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void InsertSort(IList<float> list)
+        {
+            float temp;
+            for (int i = 1; i < list.Count; i++)
+            {
+                temp = list[i];
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (list[j] > temp)
+                    {
+                        list[j + 1] = list[j];
+                        if (j == 0)
+                        {
+                            list[0] = temp;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        list[j + 1] = temp;
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Perform quick sort to a list.
+        /// </summary>
+        /// <param name="list"></param>
+        public static void QuickSort(IList<int> list)
+        {
+            QuickSortHelper(list, 0, list.Count - 1);
+        }
+
+        private static void QuickSortHelper(IList<int> list, int low, int high)
+        {
+            if (low >= high) return;
+            int temp = list[(low + high) / 2];
+            int i = low - 1, j = high + 1;
+            int index = (low + high) / 2;
+            while (true)
+            {
+                while (list[++i] < temp) ;
+                while (list[--j] > temp) ;
+                if (i >= j) break;
+                SwapValueInArray(list, i, j);
+                if (i == index) index = j;
+                else if (j == index) index = i;
+            }
+            if (j == i)
+            {
+                QuickSortHelper(list, j + 1, high);
+                QuickSortHelper(list, low, i - 1);
+            }
+            else //i-j==1
+            {
+                if (index >= i)
+                {
+                    if (index != i)
+                        SwapValueInArray(list, index, i);
+                    QuickSortHelper(list, i + 1, high);
+                    QuickSortHelper(list, low, i - 1);
+                }
+                else //index < i
+                {
+                    if (index != j)
+                        SwapValueInArray(list, index, j);
+                    QuickSortHelper(list, j + 1, high);
+                    QuickSortHelper(list, low, j - 1);
+                }
+            }
+        }
+
         #endregion
 
         #region ReflectionUtils
@@ -1350,7 +2138,7 @@ namespace SKCell
             }
         }
 
-        private static Type GetSpecificType(Type type)
+        public static Type GetSpecificType(Type type)
         {
             if (type.IsGenericType == false)
             {
@@ -1413,21 +2201,22 @@ namespace SKCell
         #endregion
 
         #region FileUtils
+
         public static void SaveObjectToJson(object obj, string fileName)
         {
-            string path = (Application.isMobilePlatform ? Application.persistentDataPath : Application.streamingAssetsPath) + SKAssetLibrary.JSON_PATH_SUFFIX + fileName;
+            string path = (Application.isMobilePlatform ? Application.persistentDataPath : Application.dataPath) + SKAssetLibrary.JSON_PATH_SUFFIX + fileName;
             File.WriteAllText(path, JsonUtility.ToJson(obj, true));
             EditorLogNormal($"Save to json: {fileName}");
         }
         public static T LoadObjectFromJson<T>(string fileName)
         {
-            string path = (Application.isMobilePlatform ? Application.persistentDataPath : Application.streamingAssetsPath) + SKAssetLibrary.JSON_PATH_SUFFIX + fileName;
+            string path = (Application.isMobilePlatform ? Application.persistentDataPath : Application.dataPath) + SKAssetLibrary.JSON_PATH_SUFFIX + fileName;
             return JsonUtility.FromJson<T>(File.ReadAllText(path));
         }
 
         public static bool JsonFileExists(string fileName)
         {
-            string path = (Application.isMobilePlatform ? Application.persistentDataPath : Application.streamingAssetsPath) + SKAssetLibrary.JSON_PATH_SUFFIX + fileName;
+            string path = (Application.isMobilePlatform ? Application.persistentDataPath : Application.dataPath) + SKAssetLibrary.JSON_PATH_SUFFIX + fileName;
             return File.Exists(path);
         }
 
@@ -1510,29 +2299,27 @@ namespace SKCell
         {
             return SKCurveSampler.SampleCurve(curve, x);
         }
-        public static float CalcInputDirection(Quaternion p_from, Quaternion p_to)
-        {
-            float tmp = p_from.eulerAngles.y - p_to.eulerAngles.y;
-            if (tmp < 0)
-            {
-                tmp += 360;
-            }
-            if (tmp > 180)
-            {
-                tmp -= 360;
-            }
-            return tmp;
-        }
 
-        //这个得到的是从-180到180
-        public static float getAngle(Vector3 selfDirection, Vector3 compareDirection)
+        /// <summary>
+        /// Get the angle between two vectors. (-180, 180)
+        /// </summary>
+        /// <param name="selfDirection"></param>
+        /// <param name="compareDirection"></param>
+        /// <returns></returns>
+        public static float GetAngle(Vector3 selfDirection, Vector3 compareDirection)
         {
             float a = Vector3.Angle(selfDirection, compareDirection);
             if (Vector2.Dot(selfDirection, compareDirection) < 0) a = -a;
             return a;
         }
 
-        public static float getAngleXYPlane(Vector3 selfDirection, Vector3 compareDirection)
+        /// <summary>
+        /// Get the angle between two vectors on the XY plane.
+        /// </summary>
+        /// <param name="selfDirection"></param>
+        /// <param name="compareDirection"></param>
+        /// <returns></returns>
+        public static float GetAngleXYPlane(Vector3 selfDirection, Vector3 compareDirection)
         {
             Vector3 v0 = selfDirection;
             Vector2 vt = new Vector2(v0.x, v0.y);
@@ -1544,10 +2331,19 @@ namespace SKCell
             return a;
         }
 
-        public static bool LinesIntersect2DInNoYPlan(Vector3 ptStart0, Vector3 ptEnd0,
+        /// <summary>
+        /// Get the status of intersection between two lines.
+        /// </summary>
+        /// <param name="ptStart0"></param>
+        /// <param name="ptEnd0"></param>
+        /// <param name="ptStart1"></param>
+        /// <param name="ptEnd1"></param>
+        /// <param name="firstIsSegment"></param>
+        /// <param name="secondIsSegment"></param>
+        /// <returns></returns>
+        public static bool LinesIntersect2D(Vector3 ptStart0, Vector3 ptEnd0,
                 Vector3 ptStart1, Vector3 ptEnd1,
-                bool firstIsSegment, bool secondIsSegment
-                                                    )
+                bool firstIsSegment, bool secondIsSegment)
         {
             float d = (ptEnd0.x - ptStart0.x) * (ptStart1.z - ptEnd1.z) - (ptStart1.x - ptEnd1.x) * (ptEnd0.z - ptStart0.z);
             float d0 = (ptStart1.x - ptStart0.x) * (ptStart1.z - ptEnd1.z) - (ptStart1.x - ptEnd1.x) * (ptStart1.z - ptStart0.z);
@@ -1563,11 +2359,21 @@ namespace SKCell
             return false;
         }
 
-        public static bool LinesIntersect2DInNoYPlanNeedOut(Vector3 ptStart0, Vector3 ptEnd0,
+        /// <summary>
+        /// Get the status of intersection between two lines. If yes, out the intersection point.
+        /// </summary>
+        /// <param name="ptStart0"></param>
+        /// <param name="ptEnd0"></param>
+        /// <param name="ptStart1"></param>
+        /// <param name="ptEnd1"></param>
+        /// <param name="firstIsSegment"></param>
+        /// <param name="secondIsSegment"></param>
+        /// <param name="pIntersectionPt"></param>
+        /// <returns></returns>
+        public static bool LinesIntersect2D(Vector3 ptStart0, Vector3 ptEnd0,
                 Vector3 ptStart1, Vector3 ptEnd1,
                 bool firstIsSegment, bool secondIsSegment,
-                ref Vector3 pIntersectionPt
-                                                           )
+                ref Vector3 pIntersectionPt)
         {
             float d = (ptEnd0.x - ptStart0.x) * (ptStart1.z - ptEnd1.z) - (ptStart1.x - ptEnd1.x) * (ptEnd0.z - ptStart0.z);
             float d0 = (ptStart1.x - ptStart0.x) * (ptStart1.z - ptEnd1.z) - (ptStart1.x - ptEnd1.x) * (ptStart1.z - ptStart0.z);
@@ -1590,7 +2396,14 @@ namespace SKCell
         }
 
 
-        //返回一条线段 和 一个球表面交点
+        /// <summary>
+        /// Returns the intersection point between a line and a sphere.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="center"></param>
+        /// <param name="radius"></param>
+        /// <returns></returns>
         public static (bool intersect, Vector3 p1, Vector3 p2) LineIntersectSphere(Vector3 start, Vector3 end, Vector3 center, float radius)
         {
             var pos1 = Vector3.zero;
@@ -1626,8 +2439,15 @@ namespace SKCell
             }
         }
 
-        //反会有向线段从球表现射出的交点
-        public static Vector3 LineOutInterectSpherePos(Vector3 start, Vector3 end, Vector3 center, float radius)
+        /// <summary>
+        /// Returns the intersection point between a line directing out and a sphere.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="center"></param>
+        /// <param name="radius"></param>
+        /// <returns></returns>
+        public static Vector3 LineOutIntersectSpherePos(Vector3 start, Vector3 end, Vector3 center, float radius)
         {
             var result = LineIntersectSphere(start, end, center, radius);
             if (result.intersect)
@@ -1641,6 +2461,14 @@ namespace SKCell
             return Vector3.zero;
         }
 
+        /// <summary>
+        /// Returns the intersection point between a line directing in and a sphere.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="center"></param>
+        /// <param name="radius"></param>
+        /// <returns></returns>
         public static Vector3 LineInInterectSpherePos(Vector3 start, Vector3 end, Vector3 center, float radius)
         {
             var result = LineIntersectSphere(start, end, center, radius);
@@ -1655,8 +2483,13 @@ namespace SKCell
             return Vector3.zero;
         }
 
-
-        public static float getAngleXZPlane(Vector3 selfDirection, Vector3 compareDirection)
+        /// <summary>
+        /// Get the angle between two vectors on the XZ plane.
+        /// </summary>
+        /// <param name="selfDirection"></param>
+        /// <param name="compareDirection"></param>
+        /// <returns></returns>
+        public static float GetAngleXZPlane(Vector3 selfDirection, Vector3 compareDirection)
         {
             Vector3 v0 = selfDirection;
             Vector2 vt = new Vector2(v0.x, v0.z);
@@ -1668,67 +2501,48 @@ namespace SKCell
             return a;
         }
 
-        public static float getDistanceXZPlane(Vector3 position1, Vector3 position2)
+        /// <summary>
+        /// Get the distance between two points on the XZ plane.
+        /// </summary>
+        /// <param name="position1"></param>
+        /// <param name="position2"></param>
+        /// <returns></returns>
+        public static float GetDistanceXZPlane(Vector3 position1, Vector3 position2)
         {
             return new Vector3(position1.x - position2.x, 0, position1.z - position2.z).magnitude;
         }
 
-        public static float getDistanceXYPlane(Vector3 position1, Vector3 position2)
+        /// <summary>
+        /// Get the distance between two points on the XY plane.
+        /// </summary>
+        /// <param name="position1"></param>
+        /// <param name="position2"></param>
+        /// <returns></returns>
+        public static float GetDistanceXYPlane(Vector3 position1, Vector3 position2)
         {
             return new Vector3(position1.x - position2.x, position1.y - position2.y, 0).magnitude;
         }
 
-        public static Vector3 getXZForward(Vector3 start, Vector3 end)
-        {
-            Vector3 forward = end - start;
-            forward.y = .0f;
-            return forward.normalized;
-        }
-
-
-        public static float CalcHDist(Vector3 pos0, Vector3 pos1)
-        {
-            Vector2 h_pos0 = new Vector2(pos0.x, pos0.z);
-            Vector2 h_pos1 = new Vector2(pos1.x, pos1.z);
-            return Vector2.Distance(h_pos0, h_pos1);
-        }
-
-        public static float CalcHDistSqr(Vector3 pos0, Vector3 pos1)
-        {
-            return (pos0.x - pos1.x) * (pos0.x - pos1.x) + (pos0.z - pos1.z) * (pos0.z - pos1.z);
-        }
-
-        public static float CalcHDistToLineSegment(Vector3 p1, Vector3 a1, Vector3 b1)
-        {
-            Vector2 p = new Vector2(p1.x, p1.z);
-            Vector2 a = new Vector2(a1.x, a1.z);
-            Vector2 b = new Vector2(b1.x, b1.z);
-            float sqrMagnitude = (b - a).sqrMagnitude;
-            if (Math.Abs(sqrMagnitude) < 1e-6)
-                return (p - a).magnitude;
-            float num = Vector2.Dot(p - a, b - a) / sqrMagnitude;
-            if (num < 0.0)
-                return (p - a).magnitude;
-            if (num > 1.0)
-                return (p - b).magnitude;
-            Vector2 vector2 = a + num * (b - a);
-            return (p - vector2).magnitude;
-        }
-
+        /// <summary>
+        /// Get the angle between two vectors.
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
         public static float Angle(Vector2 from, Vector2 to)
         {
             return Mathf.Acos(Mathf.Clamp(Vector2.Dot(from, to), -1f, 1f));
         }
 
-        public static bool LayerContains(LayerMask p_mask, int layer)
+        /// <summary>
+        /// Does the layerMask contains the given layer?
+        /// </summary>
+        /// <param name="mask"></param>
+        /// <param name="layer"></param>
+        /// <returns></returns>
+        public static bool LayerContains(LayerMask mask, int layer)
         {
-            return ((1 << layer) & p_mask) != 0;
-        }
-
-        public static bool ApproximatelyXZ(Vector3 vec, float val, float epsilon = 1e-3f)
-        {
-            vec.y = .0f;
-            return Mathf.Abs(vec.magnitude - val) <= epsilon;
+            return ((1 << layer) & mask) != 0;
         }
 
         public static Vector3 GetProjectPositionToSegmentTrigger(Vector3 position, Vector3 start, Vector3 end)
@@ -1763,13 +2577,21 @@ namespace SKCell
             return Quaternion.Euler(0, y, 0);
         }
 
-        // 目前为止 Animator.StringToHash都是c3c32实现
+        /// <summary>
+        ///  return Animator.StringToHash(p_str);
+        /// </summary>
+        /// <param name="p_str"></param>
+        /// <returns></returns>
         public static int CalcStrCRC32(string p_str)
         {
             return Animator.StringToHash(p_str);
         }
 
-        // only for windows
+        /// <summary>
+        /// Get the has key of a transform. (only on windows)
+        /// </summary>
+        /// <param name="transform"></param>
+        /// <returns></returns>
         public static int HashKey(Transform transform)
         {
             var position = transform.position;
@@ -1792,12 +2614,12 @@ namespace SKCell
             return (true, new Vector3(px, 0, pz));
         }
         /// <summary>
-        /// 计算直线与平面的交点
+        /// Calculate the intersection point between a line and a plane.
         /// </summary>
-        /// <param name="point">直线上某一点</param>
-        /// <param name="direct">直线的方向</param>
-        /// <param name="planeNormal">平面的法向量</param>
-        /// <param name="planePoint">平面上的任意一点</param>
+        /// <param name="point">A point on the line.</param>
+        /// <param name="direct">Direction of the line.</param>
+        /// <param name="planeNormal">Normal direction of the plane.</param>
+        /// <param name="planePoint">A point on the plane.</param>
         /// <returns></returns>
         public static Vector3 GetIntersectWithLineAndPlane(Vector3 point, Vector3 direct, Vector3 planeNormal, Vector3 planePoint)
         {
@@ -1805,6 +2627,13 @@ namespace SKCell
             return d * direct.normalized + point;
         }
 
+        /// <summary>
+        /// Get the point after rotating <i>offset</i> around  <i>center</i> <i>rotation</i> degrees.
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="offset"></param>
+        /// <param name="rotation"></param>
+        /// <returns></returns>
         public static Vector3 GetRotatePoint(Vector3 center, Vector3 offset, float rotation)
         {
             var cosAngle = Mathf.Cos(rotation);
@@ -1813,17 +2642,17 @@ namespace SKCell
                 -offset.x * sinAngle + (-offset.z) * cosAngle + center.z);
         }
 
-        public static float GetCross(Vector3 p1, Vector3 p2, Vector3 p)
+        private static float GetCross(Vector3 p1, Vector3 p2, Vector3 p)
         {
             return (p2.x - p1.x) * (p.z - p1.z) - (p.x - p1.x) * (p2.z - p1.z);
         }
         /// <summary>
-        /// 判断点是否在矩形内
+        /// Is the point inside the given rectangle?
         /// </summary>
-        /// <param name="rectCenter">矩形中心</param>
-        /// <param name="rectSize">矩形尺寸</param>
-        /// <param name="rotation">矩形顺时针旋转角度</param>
-        /// <param name="point">目标点</param>
+        /// <param name="rectCenter">Center of rect</param>
+        /// <param name="rectSize">Size of rect</param>
+        /// <param name="rotation">Rotation angle of rect</param>
+        /// <param name="point">Target point</param>
         /// <returns></returns>
         public static bool PointInRectangle(Vector3 rectCenter, Vector3 rectSize, float rotation, Vector3 point)
         {
@@ -1832,6 +2661,16 @@ namespace SKCell
             return PointInRectangle(p1r, p2r, p3r, p4r, point);
         }
 
+        /// <summary>
+        /// Returns a rectangle rotated by <i>rotation</i> degrees.
+        /// </summary>
+        /// <param name="rectCenter"></param>
+        /// <param name="rectSize"></param>
+        /// <param name="rotation"></param>
+        /// <param name="p1r"></param>
+        /// <param name="p2r"></param>
+        /// <param name="p3r"></param>
+        /// <param name="p4r"></param>
         public static void CalcRectangleRotate(Vector3 rectCenter, Vector3 rectSize, float rotation,
             out Vector3 p1r, out Vector3 p2r, out Vector3 p3r, out Vector3 p4r)
         {
@@ -1843,19 +2682,25 @@ namespace SKCell
         }
 
         /// <summary>
-        /// 判断点是否在矩形内
+        ///  Is the point inside the given rectangle?
         /// </summary>
-        /// <param name="p1">左上</param>
-        /// <param name="p2">左下</param>
-        /// <param name="p3">右下</param>
-        /// <param name="p4">右上</param>
-        /// <param name="point">目标点</param>
+        /// <param name="p1">Upper left point of rect</param>
+        /// <param name="p2">Lower left point of rect</param>
+        /// <param name="p3">Upper right point of rect</param>
+        /// <param name="p4">Lower right point of rect</param>
+        /// <param name="point">Target point</param>
         /// <returns></returns>
         public static bool PointInRectangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Vector3 point)
         {
             return GetCross(p1, p2, point) * GetCross(p3, p4, point) >= 0
                    && GetCross(p2, p3, point) * GetCross(p4, p1, point) >= 0;
         }
+
+        /// <summary>
+        /// Is the given int n a prime?
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
         public static bool IsPrime(int n)
         {
             if (n <= 1)
@@ -1870,36 +2715,57 @@ namespace SKCell
             return count == 0;
         }
 
+        /// <summary>
+        /// return num <= 0 ? 0 : num;
+        /// </summary>
+        /// <param name="num"></param>
+        /// <returns></returns>
         public static int NotNegative(int num)
         {
             return num <= 0 ? 0 : num;
         }
 
+        /// <summary>
+        ///  return UnityEngine.Random.Range(min, max);
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
         public static int Random(int min, int max)
         {
             return UnityEngine.Random.Range(min, max);
         }
 
+        /// <summary>
+        ///   return UnityEngine.Random.Range(min, max);
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
         public static float Random(float min, float max)
         {
             return UnityEngine.Random.Range(min, max);
         }
 
+        /// <summary>
+        /// return (float)Math.Round(num, 2);
+        /// </summary>
+        /// <param name="num"></param>
+        /// <returns></returns>
         public static float Keep2Decimal(float num)
         {
             return (float)Math.Round(num, 2);
         }
 
+        /// <summary>
+        ///  return (int)Math.Floor(num);
+        /// </summary>
+        /// <param name="num"></param>
+        /// <returns></returns>
         public static int Floor(float num)
         {
             return (int)Math.Floor(num);
         }
-
-        public static int Convert2Int(float num)
-        {
-            return Convert.ToInt32(num);
-        }
-
         #endregion
 
         #region MiscUtils
@@ -1925,8 +2791,7 @@ namespace SKCell
         }
         public static Color MixColor(Color c1, Color c2, float mix = 0.5f)
         {
-            Color diff = c2 - c1;
-            return new Color(c1.r + mix * diff.r, c1.g + mix * diff.g, c1.b + mix * diff.b, c1.a + mix * diff.a);
+            return Color.Lerp(c1, c2, mix);
         }
         public static float ColorLuminance(Color c)
         {
